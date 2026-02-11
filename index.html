@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>👀 catch & click · silky smooth</title>
+    <!-- confetti (lightweight) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <style>
+        /* -------------------- RESET & BASE -------------------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            width: 100%;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.2rem;
+            position: relative;
+            background: #03050a;
+            overflow-x: hidden;
+        }
+
+        /* ---------- YOUR MOVING BACKGROUND (OPTIMIZED) ---------- */
+        .moving-bg {
+            position: fixed;
+            top: -5%;
+            left: -5%;
+            width: 110%;
+            height: 110%;
+            z-index: 0;
+            background-image: url('https://i.ibb.co/JjqvCKWC/wp2158286-mia-khalifa-wallpapers.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            animation: gentleDrift 28s infinite alternate ease-in-out;
+            filter: brightness(0.85) saturate(1.2);
+            will-change: transform; /* performance hint */
+        }
+
+        @keyframes gentleDrift {
+            0% { transform: scale(1) translateX(0) translateY(0); }
+            100% { transform: scale(1.06) translateX(-1.5%) translateY(-1%); }
+        }
+
+        /* ---------- SIMPLE OVERLAY (NO BLUR) ---------- */
+        .soft-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: radial-gradient(circle at 30% 40%, rgba(255, 200, 220, 0.12) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        /* ---------- FLOATING EMOJIS (ONLY 6, VERY LIGHT) ---------- */
+        .emoji-cloud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            font-size: 2rem;
+        }
+
+        .emoji {
+            position: absolute;
+            opacity: 0.4;
+            animation: float 16s infinite alternate ease-in-out;
+            will-change: transform;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(30px, -20px) rotate(15deg); }
+        }
+
+        .emoji1 { top: 10%; left: 8%; animation-duration: 18s; }
+        .emoji2 { top: 75%; left: 85%; animation-duration: 20s; }
+        .emoji3 { top: 45%; left: 20%; animation-duration: 22s; }
+        .emoji4 { top: 80%; left: 15%; animation-duration: 19s; }
+        .emoji5 { top: 25%; left: 75%; animation-duration: 21s; }
+        .emoji6 { top: 60%; left: 45%; animation-duration: 23s; }
+
+        /* ---------- PARTICLE CANVAS (OPTIMIZED: 45 PARTICLES, NO MOUSE REPEL) ---------- */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        /* ---------- MAIN CONTENT ---------- */
+        .content {
+            position: relative;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+
+        /* ---------- TEASER TEXT (SMOOTH) ---------- */
+        .teaser-text {
+            font-size: 1.7rem;
+            color: white;
+            text-shadow: 0 0 25px #ffb3c6, 0 0 50px #ff9eb5;
+            letter-spacing: 6px;
+            margin-bottom: 1.2rem;
+            background: rgba(8, 5, 15, 0.45);
+            backdrop-filter: blur(8px);
+            padding: 0.9rem 2.4rem;
+            border-radius: 70px;
+            border: 1.5px solid rgba(255,255,255,0.5);
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        /* ---------- DODGING BUTTON (5 STAGES) ---------- */
+        .dream-btn {
+            background: rgba(20, 15, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border: 2.5px solid rgba(255, 255, 255, 0.8);
+            border-radius: 100px;
+            padding: 1.5rem 3.8rem;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff5f7;
+            letter-spacing: 8px;
+            text-shadow: 0 0 30px #ff9eb5, 0 0 70px #ffb3c6;
+            box-shadow: 0 20px 50px -10px black, 0 0 0 2px rgba(255,255,255,0.3) inset;
+            cursor: pointer;
+            transition: left 0.28s ease-out, top 0.28s ease-out, transform 0.2s, box-shadow 0.2s;
+            display: inline-block;
+            border: 2px solid rgba(255, 240, 245, 0.9);
+            will-change: left, top, transform;
+            position: static;
+            z-index: 100;
+        }
+
+        .dream-btn.moving {
+            position: fixed;
+            animation: none;
+            box-shadow: 0 0 60px rgba(255, 120, 160, 0.9);
+            border-color: #ffd0d9;
+        }
+
+        .dream-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* ---------- MOVE COUNTER & PROGRESS (SMOOTH) ---------- */
+        .counter-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 0.8rem;
+        }
+
+        .move-counter {
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.95);
+            background: rgba(12, 8, 20, 0.6);
+            backdrop-filter: blur(8px);
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            border: 1.5px solid rgba(255,255,255,0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .counter-number {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #ffeac0;
+            text-shadow: 0 0 25px #ffb347;
+        }
+
+        .progress-slim {
+            width: 260px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(6px);
+            border-radius: 50px;
+            padding: 0.4rem;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 14px;
+            background: linear-gradient(90deg, #ffb7c5, #ff9eb5);
+            border-radius: 50px;
+            box-shadow: 0 0 16px #ffa7b5;
+            transition: width 0.25s;
+        }
+
+        /* ---------- VIDEO SCENE (CLEAN REVEAL) ---------- */
+        #video-scene {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 2rem;
+            border-radius: 48px;
+            overflow: hidden;
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.3), 0 30px 70px black;
+            border: 2px solid rgba(255,255,255,0.7);
+            background: black;
+            animation: reveal 0.6s cubic-bezier(0.2, 1.1, 0.3, 1);
+        }
+
+        @keyframes reveal {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .video-wrapper {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+
+        #youtube-player {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+
+        .now-playing {
+            position: absolute;
+            bottom: 20px;
+            right: 25px;
+            background: rgba(10, 8, 20, 0.8);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            border: 1.5px solid white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .now-playing span {
+            width: 14px;
+            height: 14px;
+            background: #ff3b5c;
+            border-radius: 50%;
+            animation: pulse 1.4s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0.5; transform: scale(1.4); }
+        }
+
+        /* ---------- MINI BUTTERFLY (LIGHTWEIGHT) ---------- */
+        .butterfly-mini {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 200;
+            background: rgba(20, 12, 30, 0.7);
+            backdrop-filter: blur(6px);
+            border-radius: 40px;
+            padding: 12px 22px;
+            border: 1px solid rgba(255,255,255,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3rem;
+            color: white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .butterfly-btn {
+            background: #ff4d6d;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 22px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 0 20px #ff4d6d;
+            transition: 0.1s;
+        }
+
+        .butterfly-btn:active { transform: scale(0.9); }
+
+        #butterfly-score {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ffe083;
+            text-shadow: 0 0 20px #ffb347;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* ---------- CREDIT ---------- */
+        .credit {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            z-index: 200;
+            color: rgba(255,255,255,0.5);
+            background: rgba(15,10,20,0.3);
+            backdrop-filter: blur(4px);
+            padding: 6px 20px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 700px) {
+            .dream-btn { font-size: 2.2rem; padding: 1.2rem 2.5rem; }
+            .teaser-text { font-size: 1.3rem; }
+            .butterfly-mini { bottom: 15px; right: 15px; padding: 8px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- YOUR MOVING BACKGROUND -->
+    <div class="moving-bg"></div>
+    <div class="soft-overlay"></div>
+
+    <!-- FLOATING EMOJIS (ONLY 6, SILKY) -->
+    <div class="emoji-cloud">
+        <div class="emoji emoji1">✨</div>
+        <div class="emoji emoji2">🎬</div>
+        <div class="emoji emoji3">👀</div>
+        <div class="emoji emoji4">🍿</div>
+        <div class="emoji emoji5">🎥</div>
+        <div class="emoji emoji6">🔥</div>
+    </div>
+
+    <!-- PARTICLE CANVAS (LIGHT) -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- MAIN CONTENT -->
+    <div class="content">
+        <div class="teaser-text" id="dynamicTeaser">🎬 CATCH ME (5 DODGES)</div>
+
+        <button id="magicButton" class="dream-btn">
+            click to see 👀
+        </button>
+
+        <div class="counter-panel">
+            <div class="move-counter">
+                <span>🎯 attempts</span>
+                <span class="counter-number" id="counterDisplay">5</span>
+            </div>
+            <div class="progress-slim">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div id="video-scene">
+            <div class="video-wrapper">
+                <div id="youtube-player"></div>
+            </div>
+            <div class="now-playing">
+                <span></span> NOW PLAYING
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI BUTTERFLY (VERY LIGHT) -->
+    <div class="butterfly-mini">
+        <span>🦋</span>
+        <button id="butterflyClickBtn" class="butterfly-btn">+1</button>
+        <span id="butterfly-score">0</span>
+    </div>
+
+    <div class="credit">
+        your bg · 5 dodges · smooth 60fps
+    </div>
+
+    <script>
+        // -------------------- 1. DODGE BUTTON (5 STAGES, OPTIMIZED) --------------------
+        let moveCount = 0;
+        const MAX_MOVES = 5;
+        const button = document.getElementById('magicButton');
+        const counterDisplay = document.getElementById('counterDisplay');
+        const scene = document.getElementById('video-scene');
+        const teaserEl = document.getElementById('dynamicTeaser');
+        const progressFill = document.getElementById('progressFill');
+
+        // Audio (lightweight, reused)
+        let audioCtx = null;
+        function playBeep(freq = 620, duration = 0.15) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function moveButton() {
+            button.classList.add('moving');
+            const w = button.offsetWidth, h = button.offsetHeight;
+            const maxX = window.innerWidth - w - 20, maxY = window.innerHeight - h - 20;
+            button.style.left = Math.max(10, Math.min(maxX, Math.random() * maxX)) + 'px';
+            button.style.top = Math.max(10, Math.min(maxY, Math.random() * maxY)) + 'px';
+            playBeep(720, 0.1);
+        }
+
+        // YouTube API
+        let player;
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                height: '100%', width: '100%',
+                videoId: 'gDTcL05sy7I',
+                playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1 }
+            });
+        };
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+
+        // Button click
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (moveCount < MAX_MOVES) {
+                moveButton();
+                moveCount++;
+                counterDisplay.innerText = MAX_MOVES - moveCount;
+                progressFill.style.width = (moveCount / MAX_MOVES * 100) + '%';
+                if (moveCount === MAX_MOVES) {
+                    button.classList.remove('moving');
+                    button.style.position = 'fixed';
+                    button.style.boxShadow = '0 0 100px #ff9eb5, 0 0 0 4px white';
+                    teaserEl.innerText = '✨ NOW CLICK! ✨';
+                    counterDisplay.innerText = '0';
+                    playBeep(520, 0.2);
+                } else {
+                    teaserEl.innerText = ['🏃 4 left','🕹️ 3 left','🎯 2 left','⚡ last one!'][moveCount-1];
+                }
+            } else {
+                // FINAL CLICK
+                button.style.transition = '0.3s';
+                button.style.transform = 'scale(0)';
+                button.style.opacity = '0';
+                setTimeout(() => button.style.display = 'none', 400);
+
+                scene.style.display = 'block';
+                if (player && player.playVideo) player.playVideo();
+
+                // confetti (moderate)
+                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+                confetti({ particleCount: 100, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ['#ff99aa', '#c4a3ff'] });
+                confetti({ particleCount: 100, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ['#85d0ff', '#b8e0ff'] });
+
+                playBeep(440, 0.2);
+                setTimeout(() => playBeep(554, 0.15), 150);
+                setTimeout(() => playBeep(659, 0.2), 300);
+            }
+        });
+
+        // -------------------- 2. BUTTERFLY MINI (LIGHT) --------------------
+        let butterflyScore = 0;
+        const butterflyBtn = document.getElementById('butterflyClickBtn');
+        const butterflyScoreEl = document.getElementById('butterfly-score');
+        butterflyBtn.addEventListener('click', function() {
+            butterflyScore++;
+            butterflyScoreEl.innerText = butterflyScore;
+            confetti({ particleCount: 20, spread: 40, origin: { y: 0.8, x: 0.9 }, colors: ['#ffb3c6', '#ffe0b2'] });
+            playBeep(880, 0.08);
+        });
+
+        // -------------------- 3. PARTICLE SYSTEM (ONLY 45, NO MOUSE REPEL) --------------------
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function initParticles() {
+            for (let i = 0; i < 45; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2.5 + 0.8,
+                    vx: (Math.random() - 0.5) * 0.6,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    col: `rgba(${200+Math.random()*55}, ${180+Math.random()*50}, 250, ${Math.random()*0.5+0.3})`
+                });
+            }
+        }
+        initParticles();
+
+        function drawParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = p.col;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#ffb3c6';
+                ctx.fill();
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+            }
+            requestAnimationFrame(drawParticles);
+        }
+        drawParticles();
+
+        // -------------------- 4. TEASER CYCLER (LIGHT) --------------------
+        const phrases = ["🎬 dodge 5x", "👀 catch me", "🍿 almost", "🔥 5 attempts", "✨ keep going"];
+        let idx = 0;
+        setInterval(() => {
+            if (moveCount < MAX_MOVES) {
+                teaserEl.style.opacity = '0.5';
+                setTimeout(() => {
+                    teaserEl.innerText = phrases[idx % phrases.length];
+                    teaserEl.style.opacity = '1';
+                    idx++;
+                }, 150);
+            }
+        }, 2800);
+
+        // -------------------- 5. RESIZE HANDLER FOR DODGE BUTTON --------------------
+        window.addEventListener('resize', function() {
+            if (moveCount > 0 && moveCount < MAX_MOVES && button.classList.contains('moving')) {
+                const w = button.offsetWidth, h = button.offsetHeight;
+                let left = parseFloat(button.style.left) || 20;
+                let top = parseFloat(button.style.top) || 20;
+                const maxX = window.innerWidth - w - 20, maxY = window.innerHeight - h - 20;
+                button.style.left = Math.max(10, Math.min(maxX, left)) + 'px';
+                button.style.top = Math.max(10, Math.min(maxY, top)) + 'px';
+            }
+        });
+
+        // -------------------- 6. PRIME AUDIO ON FIRST HOVER --------------------
+        button.addEventListener('mouseenter', () => {
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        }, { once: true });
+    </script>
+</body>
+</html>
